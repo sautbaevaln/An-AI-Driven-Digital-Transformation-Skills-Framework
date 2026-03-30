@@ -1,0 +1,16 @@
+# Visualize Hierarchical Clusters
+plt.figure(figsize=(12, 8))
+sns.scatterplot(
+    x='PCA1',
+    y='PCA2',
+    hue='Hierarchical_Cluster',
+    data=pca_df,
+    palette='magma',
+    legend='full',
+    alpha=0.7
+)
+plt.title('Hierarchical Clustering (PCA reduced to 2D)')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
