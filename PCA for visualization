@@ -1,0 +1,16 @@
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Reduce dimensionality of TF-IDF matrix to 2 components using PCA
+pca = PCA(n_components=2, random_state=42)
+tfidf_pca = pca.fit_transform(tfidf_matrix.toarray())
+
+# Create a DataFrame for the PCA results
+pca_df = pd.DataFrame(data=tfidf_pca, columns=['PCA1', 'PCA2'])
+
+# Add cluster labels to the PCA DataFrame
+pca_df['KMeans_Cluster'] = df['cluster']
+pca_df['Hierarchical_Cluster'] = df['hier_cluster']
+
+print("PCA for visualization completed.")
