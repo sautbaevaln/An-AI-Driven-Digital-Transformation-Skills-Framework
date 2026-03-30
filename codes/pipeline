@@ -1,0 +1,243 @@
+# ============================================
+#  AI-Driven Digital Transformation Skills Framework
+#  Machine Learning Pipeline
+# ============================================
+
+# 1. Import Libraries
+
+import pandas as pd
+import numpy as np
+import re
+import nltk
+import spacy
+
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+from gensim import corpora
+from gensim.models import LdaModel
+from gensim.models import CoherenceModel
+
+# Download NLTK resources
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Load spaCy
+nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
+
+
+# ============================================
+# 2. Load Dataset
+# ============================================
+
+file_path = "DT_scopus.csv"
+df = pd.read_csv(file_path)
+
+print("Dataset loaded")
+print(df.shape)
+
+
+# ============================================
+# 3. Extract Required Columns
+# ============================================
+
+columns_needed = [
+    "Title",
+    "Abstract",
+    "Author Keywords",
+    "Index Keywords"
+]
+
+df = df[columns_needed]
+
+# Combine text fields
+df["text"] = (
+    df["Title"].fillna('') + " " +
+    df["Abstract"].fillna('') + " " +
+    df["Author Keywords"].fillna('') + " " +
+    df["Index Keywords"].fillna('')
+)
+
+print("Columns extracted")
+
+
+# ============================================
+# 4. Text Cleaning (Preprocessing)
+# ============================================
+
+stop_words = set(stopwords.words('english'))
+
+def preprocess(text):
+
+    # Lowercase
+    text = text.lower()
+
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+
+    # Tokenization
+    tokens = word_tokenize(text)
+
+    # Remove stopwords
+    tokens = [word for word in tokens if word not in stop_words]
+
+    # Lemmatization
+    doc = nlp(" ".join(tokens))
+    tokens = [token.lemma_ for token in doc]
+
+    return " ".join(tokens)
+
+df["clean_text"] = df["text"].apply(preprocess)
+
+print("Text preprocessing completed")
+
+
+# ============================================
+# 5. Skill Extraction (TF-IDF + N-grams)
+# ============================================
+
+vectorizer = TfidfVectorizer(
+    max_df=0.8,
+    min_df=5,
+    ngram_range=(1,3)
+)
+
+tfidf_matrix = vectorizer.fit_transform(df["clean_text"])
+
+feature_names = vectorizer.get_feature_names_out()
+
+tfidf_df = pd.DataFrame(
+    tfidf_matrix.toarray(),
+    columns=feature_names
+)
+
+print("TF-IDF completed")
+
+
+# ============================================
+# 6. Topic Modeling (LDA)
+# ============================================
+
+texts = [word_tokenize(text) for text in df["clean_text"]]
+
+dictionary = corpora.Dictionary(texts)
+
+corpus = [dictionary.doc2bow(text) for text in texts]
+
+lda_model = LdaModel(
+    corpus=corpus,
+    id2word=dictionary,
+    num_topics=6,
+    passes=10,
+    random_state=42
+)
+
+print("LDA Topics")
+
+for idx, topic in lda_model.print_topics(-1):
+    print(f"Topic {idx}: {topic}")
+
+
+# ============================================
+# 7. Coherence Score
+# ============================================
+
+coherence_model = CoherenceModel(
+    model=lda_model,
+    texts=texts,
+    dictionary=dictionary,
+    coherence='c_v'
+)
+
+coherence_score = coherence_model.get_coherence()
+
+print("Coherence Score:", coherence_score)
+
+
+# ============================================
+# 8. Perplexity
+# ============================================
+
+perplexity = lda_model.log_perplexity(corpus)
+
+print("Perplexity:", perplexity)
+
+
+# ============================================
+# 9. K-means Clustering
+# ============================================
+
+kmeans = KMeans(
+    n_clusters=5,
+    random_state=42
+)
+
+kmeans.fit(tfidf_matrix)
+
+clusters = kmeans.labels_
+
+df["cluster"] = clusters
+
+print("K-means clustering completed")
+
+
+# ============================================
+# 10. Hierarchical Clustering
+# ============================================
+
+hierarchical = AgglomerativeClustering(
+    n_clusters=5,
+    metric='cosine',
+    linkage='average'
+)
+
+hier_clusters = hierarchical.fit_predict(tfidf_matrix.toarray())
+
+df["hier_cluster"] = hier_clusters
+
+print("Hierarchical clustering completed")
+
+
+# ============================================
+# 11. Silhouette Score
+# ============================================
+
+score = silhouette_score(tfidf_matrix, clusters)
+
+print("Silhouette Score:", score)
+
+
+# ============================================
+# 12. Extract Skills per Cluster
+# ============================================
+
+print("\nSkill Clusters")
+
+for i in range(5):
+
+    print(f"\nCluster {i}")
+
+    cluster_data = tfidf_df[df["cluster"] == i]
+
+    top_terms = cluster_data.mean().sort_values(
+        ascending=False
+    ).head(10)
+
+    print(top_terms)
+
+
+# ============================================
+# 13. Save Results
+# ============================================
+
+df.to_csv("ml_cluster_results.csv", index=False)
+
+print("Results saved")
+
+# ============================================
+# END PIPELINE
+# ============================================
