@@ -1,0 +1,19 @@
+# Visualize K-means Clusters
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(12, 8))
+sns.scatterplot(
+    x='PCA1',
+    y='PCA2',
+    hue='KMeans_Cluster',
+    data=pca_df,
+    palette='viridis',
+    legend='full',
+    alpha=0.7
+)
+plt.title('K-means Clustering (PCA reduced to 2D)')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.show()
