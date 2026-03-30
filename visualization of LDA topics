@@ -1,0 +1,32 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_lda_topics(lda_model, topic_word_matrix, num_words=10):
+    num_topics = lda_model.num_topics
+    fig, axes = plt.subplots(num_topics // 3 + (num_topics % 3 > 0), 3, figsize=(20, 5 * (num_topics // 3 + (num_topics % 3 > 0))))
+    axes = axes.flatten() if num_topics > 1 else [axes]
+
+    for i, topic in enumerate(lda_model.show_topics(num_topics=num_topics, num_words=num_words, formatted=False)):
+        ax = axes[i]
+        topic_words = [word for word, _ in topic[1]]
+        topic_probabilities = [prob for _, prob in topic[1]]
+
+        sns.barplot(x=topic_probabilities, y=topic_words, ax=ax, palette='viridis')
+        ax.set_title(f'Topic {i}')
+        ax.set_xlabel('Probability')
+        ax.set_ylabel('Word')
+        ax.tick_params(axis='y', labelsize=10)
+        ax.tick_params(axis='x', labelsize=10)
+        ax.grid(axis='x', linestyle='--', alpha=0.7)
+
+    # Hide any unused subplots if the number of topics is not a multiple of 3
+    for j in range(i + 1, len(axes)):
+        fig.delaxes(axes[j])
+
+    plt.tight_layout()
+    plt.suptitle('Top Words for Each LDA Topic', y=1.02, fontsize=16)
+    plt.show()
+
+# Get the topic-word distribution for visualization
+topic_word_matrix = lda_model.show_topics(num_topics=lda_model.num_topics, num_words=10, formatted=False)
+plot_lda_topics(lda_model, topic_word_matrix)
